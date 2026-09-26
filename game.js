@@ -417,7 +417,7 @@
       list.push({
         z: spacing % trackLength,
         x: ((i % 3) - 1) * 0.35,
-        speed: MAX_SPEED * (0.55 + Math.random() * 0.28),
+        speed: 0, // fair start — no free launch speed vs player
         targetSpeed: MAX_SPEED * (0.6 + Math.random() * 0.25),
         lap: 1,
         finished: false,
@@ -481,11 +481,16 @@
       } else if (n === 1) {
         n = 0;
         countdownNum.textContent = "GO";
+        // Race starts on GO — player can accelerate immediately (held keys carry through)
+        state = "racing";
+        lapStartTime = performance.now();
+        lastTs = performance.now();
+        // Brief launch assist if accel already held from countdown (keyboard or touch)
+        if (keys.accel) {
+          player.speed = Math.max(player.speed, MAX_SPEED * 0.18);
+        }
         setTimeout(() => {
           hide(countdownEl);
-          state = "racing";
-          lapStartTime = performance.now();
-          lastTs = performance.now();
         }, 700);
       }
     };
@@ -793,9 +798,10 @@
         // slow in curves a bit
         const rseg = findSegment(r.z);
         if (Math.abs(rseg.curve) > 3) r.targetSpeed *= 0.82;
-        if (r.speed < r.targetSpeed) r.speed += 0.2 * 60 * dt;
+        // Accel/decel comparable to player ACCEL so AI does not get a free jump
+        if (r.speed < r.targetSpeed) r.speed += 0.58 * 60 * dt;
         else r.speed -= 0.15 * 60 * dt;
-        r.speed = Math.max(40, Math.min(MAX_SPEED * 0.92, r.speed));
+        r.speed = Math.max(0, Math.min(MAX_SPEED * 0.92, r.speed));
         // stay near lane, dodge player
         let tx = ((i % 3) - 1) * 0.4 + Math.sin(r.aiPhase + i) * 0.15;
         const pdz = percentRemaining(player.z - r.z, trackLength);
