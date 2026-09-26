@@ -37,14 +37,14 @@
     { id: "sponsor", name: "Sponsor Pack", body: "#ff6a00", accent: "#111111", stripe: "#ffffff", glow: "#ff8800" },
   ];
 
-  // Shape variants: same wedge family, slight silhouette tweaks
+  // Iconic rear/¾ silhouettes (in-universe names; shapes read as classic supercars)
   const CARS = [
-    { id: "volt", name: "Volt Wedge", shape: 0, defaultLivery: "neon" },
-    { id: "raptor", name: "Raptor GT", shape: 1, defaultLivery: "rosso" },
-    { id: "spectre", name: "Spectre X", shape: 2, defaultLivery: "carbon" },
-    { id: "nova", name: "Nova Pulse", shape: 0, defaultLivery: "blu" },
-    { id: "ember", name: "Ember S", shape: 1, defaultLivery: "giallo" },
-    { id: "phantom", name: "Phantom R", shape: 2, defaultLivery: "stripe" },
+    { id: "911rs", name: "911 RS", short: "911", shape: "911", defaultLivery: "stripe" },
+    { id: "esprit", name: "Esprit S", short: "ESPRIT", shape: "esprit", defaultLivery: "giallo" },
+    { id: "tridente", name: "Tridente GT", short: "TRIDENTE", shape: "tridente", defaultLivery: "blu" },
+    { id: "berlinetta", name: "Rosso Berlinetta", short: "BERLINETTA", shape: "berlinetta", defaultLivery: "rosso" },
+    { id: "counta", name: "Counta X", short: "COUNTA", shape: "counta", defaultLivery: "neon" },
+    { id: "vantage", name: "Vantage S", short: "VANTAGE", shape: "vantage", defaultLivery: "carbon" },
   ];
 
   function getLivery(id) {
@@ -300,87 +300,625 @@
     ctx.restore();
   }
 
-  /** Draw supercar from behind (Pole Position view). shape 0/1/2 variants. */
+  /** Draw supercar from behind (Pole Position camera). Distinct silhouettes per shape id. */
   function drawCar(g, cx, cy, scale, livery, shape, facing) {
     const L = getLivery(livery);
     const w = scale;
     const h = scale * 0.52;
-    const rearW = shape === 2 ? 0.5 : shape === 1 ? 0.46 : 0.48;
-    const topW = shape === 1 ? 0.16 : shape === 2 ? 0.12 : 0.14;
     g.save();
     g.translate(cx, cy);
 
-    // shadow
+    // ground shadow
     g.fillStyle = "rgba(0,0,0,0.45)";
     g.beginPath();
-    g.ellipse(0, h * 0.4, w * 0.5, h * 0.11, 0, 0, Math.PI * 2);
+    g.ellipse(0, h * 0.42, w * 0.52, h * 0.12, 0, 0, Math.PI * 2);
     g.fill();
 
-    // underglow
     g.shadowColor = L.glow;
     g.shadowBlur = Math.max(6, scale * 0.14);
 
-    // main body (rear facing camera; narrows toward horizon/top)
-    g.fillStyle = L.body;
-    g.beginPath();
-    g.moveTo(-w * topW, -h * 0.42);          // roof front
-    g.lineTo(w * topW, -h * 0.42);
-    g.lineTo(w * rearW, h * 0.18);            // rear corners
-    g.lineTo(w * (rearW - 0.08), h * 0.36);
-    g.lineTo(-w * (rearW - 0.08), h * 0.36);
-    g.lineTo(-w * rearW, h * 0.18);
-    g.closePath();
-    g.fill();
+    const drawers = {
+      "911": drawShape911,
+      esprit: drawShapeEsprit,
+      tridente: drawShapeTridente,
+      berlinetta: drawShapeBerlinetta,
+      counta: drawShapeCounta,
+      vantage: drawShapeVantage,
+    };
+    (drawers[shape] || drawShape911)(g, w, h, L);
+
     g.shadowBlur = 0;
-
-    // rear bumper
-    g.fillStyle = L.accent;
-    g.fillRect(-w * (rearW - 0.1), h * 0.22, w * (rearW - 0.1) * 2, h * 0.1);
-
-    // cabin glass
-    g.fillStyle = "rgba(30, 50, 90, 0.9)";
-    g.beginPath();
-    g.moveTo(-w * (topW + 0.02), -h * 0.38);
-    g.lineTo(w * (topW + 0.02), -h * 0.38);
-    g.lineTo(w * 0.2, h * 0.02);
-    g.lineTo(-w * 0.2, h * 0.02);
-    g.closePath();
-    g.fill();
-
-    // stripe
-    if (L.stripe) {
-      g.fillStyle = L.stripe;
-      g.fillRect(-w * 0.045, -h * 0.4, w * 0.09, h * 0.7);
-    }
-
-    // taillights
-    g.fillStyle = "#ff2040";
-    g.shadowColor = "#ff2040";
-    g.shadowBlur = 10;
-    g.fillRect(-w * (rearW - 0.14), h * 0.2, w * 0.1, h * 0.07);
-    g.fillRect(w * (rearW - 0.24), h * 0.2, w * 0.1, h * 0.07);
-    g.shadowBlur = 0;
-
-    // wheels
-    g.fillStyle = "#0a0a0a";
-    g.fillRect(-w * (rearW + 0.02), h * 0.05, w * 0.1, h * 0.28);
-    g.fillRect(w * (rearW - 0.08), h * 0.05, w * 0.1, h * 0.28);
 
     if (L.id === "sponsor") {
       g.fillStyle = "#fff";
       g.font = `bold ${Math.max(6, scale * 0.08)}px sans-serif`;
       g.textAlign = "center";
-      g.fillText("APX", 0, h * 0.12);
-    }
-
-    // Night Neon accent rim
-    if (L.id === "neon") {
-      g.strokeStyle = L.accent;
-      g.lineWidth = Math.max(1, scale * 0.02);
-      g.strokeRect(-w * 0.18, -h * 0.2, w * 0.36, h * 0.16);
+      g.fillText("APX", 0, h * 0.08);
     }
 
     g.restore();
+  }
+
+  function paintStripe(g, w, h, L, x0, y0, tw, th) {
+    if (!L.stripe) return;
+    g.fillStyle = L.stripe;
+    g.fillRect(x0, y0, tw, th);
+  }
+
+  function drawWheels(g, w, h, leftX, rightX, y, wh, ww) {
+    g.fillStyle = "#0a0a0a";
+    g.fillRect(leftX, y, ww, wh);
+    g.fillRect(rightX, y, ww, wh);
+    // rim highlight
+    g.fillStyle = "#333";
+    g.fillRect(leftX + ww * 0.25, y + wh * 0.2, ww * 0.5, wh * 0.55);
+    g.fillRect(rightX + ww * 0.25, y + wh * 0.2, ww * 0.5, wh * 0.55);
+  }
+
+  function drawExhaust(g, tips, y, rw, rh) {
+    g.fillStyle = "#222";
+    tips.forEach((x) => {
+      g.beginPath();
+      g.ellipse(x, y, rw, rh, 0, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#111";
+      g.beginPath();
+      g.ellipse(x, y, rw * 0.55, rh * 0.55, 0, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#222";
+    });
+  }
+
+  /** Round-haunch rear-engine coupe — reads as classic 911 */
+  function drawShape911(g, w, h, L) {
+    // body with round haunches
+    g.fillStyle = L.body;
+    g.beginPath();
+    g.moveTo(-w * 0.12, -h * 0.38);
+    g.lineTo(w * 0.12, -h * 0.38);
+    g.quadraticCurveTo(w * 0.22, -h * 0.1, w * 0.48, h * 0.12);
+    g.quadraticCurveTo(w * 0.52, h * 0.22, w * 0.46, h * 0.34);
+    g.lineTo(-w * 0.46, h * 0.34);
+    g.quadraticCurveTo(-w * 0.52, h * 0.22, -w * 0.48, h * 0.12);
+    g.quadraticCurveTo(-w * 0.22, -h * 0.1, -w * 0.12, -h * 0.38);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+
+    // duckbill spoiler
+    g.fillStyle = L.accent;
+    g.beginPath();
+    g.moveTo(-w * 0.28, h * 0.02);
+    g.lineTo(w * 0.28, h * 0.02);
+    g.lineTo(w * 0.32, h * 0.1);
+    g.lineTo(-w * 0.32, h * 0.1);
+    g.closePath();
+    g.fill();
+
+    // cabin glass (shallow rear window)
+    g.fillStyle = "rgba(40, 60, 100, 0.92)";
+    g.beginPath();
+    g.moveTo(-w * 0.1, -h * 0.34);
+    g.lineTo(w * 0.1, -h * 0.34);
+    g.lineTo(w * 0.18, h * 0.0);
+    g.lineTo(-w * 0.18, h * 0.0);
+    g.closePath();
+    g.fill();
+
+    // side mirrors
+    g.fillStyle = L.accent;
+    g.fillRect(-w * 0.22, -h * 0.22, w * 0.06, h * 0.05);
+    g.fillRect(w * 0.16, -h * 0.22, w * 0.06, h * 0.05);
+
+    paintStripe(g, w, h, L, -w * 0.04, -h * 0.36, w * 0.08, h * 0.68);
+
+    // engine-lid grill lines
+    g.strokeStyle = "rgba(0,0,0,0.35)";
+    g.lineWidth = Math.max(1, w * 0.008);
+    for (let i = -2; i <= 2; i++) {
+      g.beginPath();
+      g.moveTo(i * w * 0.04, h * 0.12);
+      g.lineTo(i * w * 0.04, h * 0.22);
+      g.stroke();
+    }
+
+    // oval taillights
+    g.fillStyle = "#ff2030";
+    g.shadowColor = "#ff2030";
+    g.shadowBlur = 12;
+    g.beginPath();
+    g.ellipse(-w * 0.34, h * 0.2, w * 0.07, h * 0.055, 0, 0, Math.PI * 2);
+    g.fill();
+    g.beginPath();
+    g.ellipse(w * 0.34, h * 0.2, w * 0.07, h * 0.055, 0, 0, Math.PI * 2);
+    g.fill();
+    g.shadowBlur = 0;
+
+    // bumper
+    g.fillStyle = L.accent;
+    g.fillRect(-w * 0.38, h * 0.28, w * 0.76, h * 0.06);
+
+    drawExhaust(g, [-w * 0.12, w * 0.12], h * 0.36, w * 0.035, h * 0.025);
+    drawWheels(g, w, h, -w * 0.52, w * 0.42, h * 0.08, h * 0.28, w * 0.1);
+
+    if (L.id === "neon") {
+      g.strokeStyle = L.accent;
+      g.lineWidth = Math.max(1, w * 0.018);
+      g.strokeRect(-w * 0.16, -h * 0.18, w * 0.32, h * 0.14);
+    }
+  }
+
+  /** Sharp Giugiaro wedge — reads as Esprit */
+  function drawShapeEsprit(g, w, h, L) {
+    g.fillStyle = L.body;
+    g.beginPath();
+    g.moveTo(-w * 0.1, -h * 0.44);
+    g.lineTo(w * 0.1, -h * 0.44);
+    g.lineTo(w * 0.42, h * 0.08);
+    g.lineTo(w * 0.44, h * 0.32);
+    g.lineTo(-w * 0.44, h * 0.32);
+    g.lineTo(-w * 0.42, h * 0.08);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+
+    // sharp rear deck crease
+    g.fillStyle = L.accent;
+    g.beginPath();
+    g.moveTo(-w * 0.36, h * 0.06);
+    g.lineTo(w * 0.36, h * 0.06);
+    g.lineTo(w * 0.4, h * 0.16);
+    g.lineTo(-w * 0.4, h * 0.16);
+    g.closePath();
+    g.fill();
+
+    // angular cabin
+    g.fillStyle = "rgba(25, 45, 80, 0.95)";
+    g.beginPath();
+    g.moveTo(-w * 0.08, -h * 0.4);
+    g.lineTo(w * 0.08, -h * 0.4);
+    g.lineTo(w * 0.2, h * 0.02);
+    g.lineTo(-w * 0.2, h * 0.02);
+    g.closePath();
+    g.fill();
+
+    // pop-up headlight humps (visible as small roof steps from rear)
+    g.fillStyle = L.body;
+    g.fillRect(-w * 0.14, -h * 0.46, w * 0.08, h * 0.05);
+    g.fillRect(w * 0.06, -h * 0.46, w * 0.08, h * 0.05);
+
+    // mirrors — sharp stubs
+    g.fillStyle = L.accent;
+    g.beginPath();
+    g.moveTo(-w * 0.2, -h * 0.2);
+    g.lineTo(-w * 0.28, -h * 0.16);
+    g.lineTo(-w * 0.2, -h * 0.14);
+    g.fill();
+    g.beginPath();
+    g.moveTo(w * 0.2, -h * 0.2);
+    g.lineTo(w * 0.28, -h * 0.16);
+    g.lineTo(w * 0.2, -h * 0.14);
+    g.fill();
+
+    paintStripe(g, w, h, L, -w * 0.035, -h * 0.42, w * 0.07, h * 0.7);
+
+    // horizontal rectangular lights
+    g.fillStyle = "#ff1830";
+    g.shadowColor = "#ff1830";
+    g.shadowBlur = 10;
+    g.fillRect(-w * 0.4, h * 0.18, w * 0.14, h * 0.06);
+    g.fillRect(w * 0.26, h * 0.18, w * 0.14, h * 0.06);
+    g.shadowBlur = 0;
+
+    // diffuser
+    g.fillStyle = "#111";
+    g.fillRect(-w * 0.32, h * 0.26, w * 0.64, h * 0.06);
+    g.fillStyle = L.accent;
+    for (let i = -2; i <= 2; i++) {
+      g.fillRect(i * w * 0.08 - w * 0.015, h * 0.26, w * 0.03, h * 0.06);
+    }
+
+    drawExhaust(g, [-w * 0.18, w * 0.18], h * 0.34, w * 0.03, h * 0.02);
+    drawWheels(g, w, h, -w * 0.5, w * 0.4, h * 0.06, h * 0.28, w * 0.1);
+
+    if (L.id === "neon") {
+      g.strokeStyle = L.accent;
+      g.lineWidth = Math.max(1, w * 0.018);
+      g.beginPath();
+      g.moveTo(-w * 0.18, -h * 0.22);
+      g.lineTo(w * 0.18, -h * 0.22);
+      g.lineTo(w * 0.22, -h * 0.02);
+      g.lineTo(-w * 0.22, -h * 0.02);
+      g.closePath();
+      g.stroke();
+    }
+  }
+
+  /** Elegant GT coupe — reads as Maserati */
+  function drawShapeTridente(g, w, h, L) {
+    g.fillStyle = L.body;
+    g.beginPath();
+    g.moveTo(-w * 0.14, -h * 0.4);
+    g.lineTo(w * 0.14, -h * 0.4);
+    g.quadraticCurveTo(w * 0.28, -h * 0.05, w * 0.46, h * 0.14);
+    g.lineTo(w * 0.44, h * 0.34);
+    g.lineTo(-w * 0.44, h * 0.34);
+    g.lineTo(-w * 0.46, h * 0.14);
+    g.quadraticCurveTo(-w * 0.28, -h * 0.05, -w * 0.14, -h * 0.4);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+
+    // chrome-ish light bar strip
+    g.fillStyle = "#c8c8d0";
+    g.fillRect(-w * 0.4, h * 0.16, w * 0.8, h * 0.045);
+
+    // cabin — taller, more upright
+    g.fillStyle = "rgba(35, 55, 95, 0.9)";
+    g.beginPath();
+    g.moveTo(-w * 0.12, -h * 0.36);
+    g.lineTo(w * 0.12, -h * 0.36);
+    g.lineTo(w * 0.22, h * 0.04);
+    g.lineTo(-w * 0.22, h * 0.04);
+    g.closePath();
+    g.fill();
+
+    // C-pillar elegance
+    g.fillStyle = L.body;
+    g.beginPath();
+    g.moveTo(-w * 0.22, h * 0.04);
+    g.lineTo(-w * 0.32, h * 0.14);
+    g.lineTo(-w * 0.22, h * 0.14);
+    g.fill();
+    g.beginPath();
+    g.moveTo(w * 0.22, h * 0.04);
+    g.lineTo(w * 0.32, h * 0.14);
+    g.lineTo(w * 0.22, h * 0.14);
+    g.fill();
+
+    // mirrors
+    g.fillStyle = "#c8c8d0";
+    g.fillRect(-w * 0.24, -h * 0.24, w * 0.07, h * 0.045);
+    g.fillRect(w * 0.17, -h * 0.24, w * 0.07, h * 0.045);
+
+    // subtle lip spoiler
+    g.fillStyle = L.accent;
+    g.fillRect(-w * 0.3, h * 0.08, w * 0.6, h * 0.035);
+
+    paintStripe(g, w, h, L, -w * 0.04, -h * 0.38, w * 0.08, h * 0.5);
+
+    // oval lights on chrome bar
+    g.fillStyle = "#ff2840";
+    g.shadowColor = "#ff2840";
+    g.shadowBlur = 10;
+    g.beginPath();
+    g.ellipse(-w * 0.3, h * 0.182, w * 0.055, h * 0.035, 0, 0, Math.PI * 2);
+    g.fill();
+    g.beginPath();
+    g.ellipse(w * 0.3, h * 0.182, w * 0.055, h * 0.035, 0, 0, Math.PI * 2);
+    g.fill();
+    // center amber hint
+    g.fillStyle = "#ffaa33";
+    g.shadowBlur = 4;
+    g.beginPath();
+    g.ellipse(0, h * 0.182, w * 0.04, h * 0.025, 0, 0, Math.PI * 2);
+    g.fill();
+    g.shadowBlur = 0;
+
+    // bumper
+    g.fillStyle = L.accent;
+    g.fillRect(-w * 0.36, h * 0.26, w * 0.72, h * 0.07);
+
+    // dual exhaust
+    drawExhaust(g, [-w * 0.14, w * 0.14], h * 0.36, w * 0.032, h * 0.022);
+    drawWheels(g, w, h, -w * 0.5, w * 0.4, h * 0.08, h * 0.28, w * 0.1);
+
+    // tiny trident vibe — 3 short vertical ticks on rear
+    g.strokeStyle = "#c8c8d0";
+    g.lineWidth = Math.max(1, w * 0.012);
+    for (let i = -1; i <= 1; i++) {
+      g.beginPath();
+      g.moveTo(i * w * 0.025, h * 0.1);
+      g.lineTo(i * w * 0.025, h * 0.14);
+      g.stroke();
+    }
+
+    if (L.id === "neon") {
+      g.strokeStyle = L.accent;
+      g.lineWidth = Math.max(1, w * 0.018);
+      g.strokeRect(-w * 0.18, -h * 0.2, w * 0.36, h * 0.16);
+    }
+  }
+
+  /** Classic mid-engine berlinetta — reads as Ferrari */
+  function drawShapeBerlinetta(g, w, h, L) {
+    g.fillStyle = L.body;
+    g.beginPath();
+    g.moveTo(-w * 0.11, -h * 0.4);
+    g.lineTo(w * 0.11, -h * 0.4);
+    g.quadraticCurveTo(w * 0.2, -h * 0.15, w * 0.36, h * 0.0);
+    g.lineTo(w * 0.48, h * 0.16);
+    g.quadraticCurveTo(w * 0.5, h * 0.28, w * 0.44, h * 0.36);
+    g.lineTo(-w * 0.44, h * 0.36);
+    g.quadraticCurveTo(-w * 0.5, h * 0.28, -w * 0.48, h * 0.16);
+    g.lineTo(-w * 0.36, h * 0.0);
+    g.quadraticCurveTo(-w * 0.2, -h * 0.15, -w * 0.11, -h * 0.4);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+
+    // flying-buttress glass tunnels
+    g.fillStyle = "rgba(20, 40, 75, 0.95)";
+    g.beginPath();
+    g.moveTo(-w * 0.09, -h * 0.36);
+    g.lineTo(w * 0.09, -h * 0.36);
+    g.lineTo(w * 0.16, -h * 0.05);
+    g.lineTo(w * 0.28, h * 0.1);
+    g.lineTo(w * 0.12, h * 0.1);
+    g.lineTo(w * 0.06, -h * 0.02);
+    g.lineTo(-w * 0.06, -h * 0.02);
+    g.lineTo(-w * 0.12, h * 0.1);
+    g.lineTo(-w * 0.28, h * 0.1);
+    g.lineTo(-w * 0.16, -h * 0.05);
+    g.closePath();
+    g.fill();
+
+    // small rear wing
+    g.fillStyle = L.accent;
+    g.beginPath();
+    g.moveTo(-w * 0.22, -h * 0.02);
+    g.lineTo(w * 0.22, -h * 0.02);
+    g.lineTo(w * 0.26, h * 0.04);
+    g.lineTo(-w * 0.26, h * 0.04);
+    g.closePath();
+    g.fill();
+    // wing endplates
+    g.fillRect(-w * 0.28, -h * 0.06, w * 0.04, h * 0.12);
+    g.fillRect(w * 0.24, -h * 0.06, w * 0.04, h * 0.12);
+
+    // mirrors
+    g.fillStyle = L.accent;
+    g.beginPath();
+    g.ellipse(-w * 0.2, -h * 0.22, w * 0.04, h * 0.03, -0.3, 0, Math.PI * 2);
+    g.fill();
+    g.beginPath();
+    g.ellipse(w * 0.2, -h * 0.22, w * 0.04, h * 0.03, 0.3, 0, Math.PI * 2);
+    g.fill();
+
+    paintStripe(g, w, h, L, -w * 0.04, -h * 0.38, w * 0.08, h * 0.45);
+
+    // round twin taillights (classic berlinetta cluster)
+    g.fillStyle = "#ff1028";
+    g.shadowColor = "#ff1028";
+    g.shadowBlur = 12;
+    [[-0.36, -0.28], [0.28, 0.36]].forEach(([a, b]) => {
+      g.beginPath();
+      g.ellipse(w * a, h * 0.2, w * 0.045, h * 0.045, 0, 0, Math.PI * 2);
+      g.fill();
+      g.beginPath();
+      g.ellipse(w * b, h * 0.2, w * 0.045, h * 0.045, 0, 0, Math.PI * 2);
+      g.fill();
+    });
+    g.shadowBlur = 0;
+
+    // mesh grill / engine cover
+    g.fillStyle = "rgba(0,0,0,0.4)";
+    g.fillRect(-w * 0.2, h * 0.1, w * 0.4, h * 0.08);
+
+    // diffuser fins
+    g.fillStyle = "#111";
+    g.fillRect(-w * 0.34, h * 0.28, w * 0.68, h * 0.07);
+    g.fillStyle = L.accent;
+    for (let i = -3; i <= 3; i++) {
+      g.fillRect(i * w * 0.07 - w * 0.012, h * 0.28, w * 0.024, h * 0.07);
+    }
+
+    // center + twin exhaust
+    drawExhaust(g, [-w * 0.1, 0, w * 0.1], h * 0.37, w * 0.028, h * 0.02);
+    drawWheels(g, w, h, -w * 0.52, w * 0.42, h * 0.08, h * 0.3, w * 0.1);
+
+    if (L.id === "neon") {
+      g.strokeStyle = L.accent;
+      g.lineWidth = Math.max(1, w * 0.018);
+      g.strokeRect(-w * 0.14, -h * 0.2, w * 0.28, h * 0.14);
+    }
+  }
+
+  /** Extreme angular wedge — reads as Countach / Aventador */
+  function drawShapeCounta(g, w, h, L) {
+    g.fillStyle = L.body;
+    g.beginPath();
+    // ultra-wide geometric rear
+    g.moveTo(-w * 0.08, -h * 0.36);
+    g.lineTo(w * 0.08, -h * 0.36);
+    g.lineTo(w * 0.18, -h * 0.18);
+    g.lineTo(w * 0.52, h * 0.1);
+    g.lineTo(w * 0.5, h * 0.34);
+    g.lineTo(-w * 0.5, h * 0.34);
+    g.lineTo(-w * 0.52, h * 0.1);
+    g.lineTo(-w * 0.18, -h * 0.18);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+
+    // tall hexagonal rear deck
+    g.fillStyle = L.accent;
+    g.beginPath();
+    g.moveTo(-w * 0.3, -h * 0.08);
+    g.lineTo(w * 0.3, -h * 0.08);
+    g.lineTo(w * 0.38, h * 0.12);
+    g.lineTo(-w * 0.38, h * 0.12);
+    g.closePath();
+    g.fill();
+
+    // NACA / slat vents on deck
+    g.fillStyle = "#0a0a0a";
+    for (let i = -3; i <= 3; i++) {
+      g.fillRect(i * w * 0.055 - w * 0.02, -h * 0.04, w * 0.04, h * 0.12);
+    }
+
+    // cabin — small and set forward
+    g.fillStyle = "rgba(20, 35, 70, 0.95)";
+    g.beginPath();
+    g.moveTo(-w * 0.06, -h * 0.34);
+    g.lineTo(w * 0.06, -h * 0.34);
+    g.lineTo(w * 0.14, -h * 0.1);
+    g.lineTo(-w * 0.14, -h * 0.1);
+    g.closePath();
+    g.fill();
+
+    // giant rear wing
+    g.fillStyle = L.accent;
+    g.fillRect(-w * 0.36, -h * 0.48, w * 0.72, h * 0.05);
+    g.fillRect(-w * 0.38, -h * 0.48, w * 0.05, h * 0.2);
+    g.fillRect(w * 0.33, -h * 0.48, w * 0.05, h * 0.2);
+    // wing struts
+    g.fillRect(-w * 0.12, -h * 0.43, w * 0.04, h * 0.12);
+    g.fillRect(w * 0.08, -h * 0.43, w * 0.04, h * 0.12);
+
+    // angular mirrors
+    g.fillStyle = L.accent;
+    g.beginPath();
+    g.moveTo(-w * 0.16, -h * 0.24);
+    g.lineTo(-w * 0.28, -h * 0.2);
+    g.lineTo(-w * 0.16, -h * 0.16);
+    g.fill();
+    g.beginPath();
+    g.moveTo(w * 0.16, -h * 0.24);
+    g.lineTo(w * 0.28, -h * 0.2);
+    g.lineTo(w * 0.16, -h * 0.16);
+    g.fill();
+
+    paintStripe(g, w, h, L, -w * 0.035, -h * 0.34, w * 0.07, h * 0.42);
+
+    // hexagonal / trapezoid taillights
+    g.fillStyle = "#ff1830";
+    g.shadowColor = "#ff1830";
+    g.shadowBlur = 12;
+    function hexLight(ox) {
+      g.beginPath();
+      g.moveTo(ox - w * 0.06, h * 0.16);
+      g.lineTo(ox - w * 0.03, h * 0.14);
+      g.lineTo(ox + w * 0.03, h * 0.14);
+      g.lineTo(ox + w * 0.06, h * 0.16);
+      g.lineTo(ox + w * 0.03, h * 0.22);
+      g.lineTo(ox - w * 0.03, h * 0.22);
+      g.closePath();
+      g.fill();
+    }
+    hexLight(-w * 0.34);
+    hexLight(w * 0.34);
+    g.shadowBlur = 0;
+
+    // aggressive diffuser
+    g.fillStyle = "#0a0a0a";
+    g.beginPath();
+    g.moveTo(-w * 0.4, h * 0.26);
+    g.lineTo(w * 0.4, h * 0.26);
+    g.lineTo(w * 0.44, h * 0.36);
+    g.lineTo(-w * 0.44, h * 0.36);
+    g.closePath();
+    g.fill();
+    g.fillStyle = L.body;
+    for (let i = -2; i <= 2; i++) {
+      g.fillRect(i * w * 0.1 - w * 0.02, h * 0.26, w * 0.04, h * 0.1);
+    }
+
+    // quad exhaust
+    drawExhaust(g, [-w * 0.2, -w * 0.1, w * 0.1, w * 0.2], h * 0.34, w * 0.025, h * 0.018);
+    drawWheels(g, w, h, -w * 0.56, w * 0.46, h * 0.06, h * 0.3, w * 0.1);
+
+    if (L.id === "neon") {
+      g.strokeStyle = L.accent;
+      g.lineWidth = Math.max(1, w * 0.02);
+      g.strokeRect(-w * 0.14, -h * 0.28, w * 0.28, h * 0.12);
+    }
+  }
+
+  /** Refined GT fastback — reads as Aston Martin */
+  function drawShapeVantage(g, w, h, L) {
+    g.fillStyle = L.body;
+    g.beginPath();
+    g.moveTo(-w * 0.13, -h * 0.42);
+    g.lineTo(w * 0.13, -h * 0.42);
+    g.quadraticCurveTo(w * 0.26, -h * 0.12, w * 0.45, h * 0.12);
+    g.quadraticCurveTo(w * 0.48, h * 0.24, w * 0.42, h * 0.34);
+    g.lineTo(-w * 0.42, h * 0.34);
+    g.quadraticCurveTo(-w * 0.48, h * 0.24, -w * 0.45, h * 0.12);
+    g.quadraticCurveTo(-w * 0.26, -h * 0.12, -w * 0.13, -h * 0.42);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+
+    // continuous elegant light bar
+    g.fillStyle = "#ff2038";
+    g.shadowColor = "#ff2038";
+    g.shadowBlur = 14;
+    g.beginPath();
+    g.moveTo(-w * 0.38, h * 0.16);
+    g.quadraticCurveTo(0, h * 0.13, w * 0.38, h * 0.16);
+    g.lineTo(w * 0.38, h * 0.22);
+    g.quadraticCurveTo(0, h * 0.19, -w * 0.38, h * 0.22);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
+
+    // cabin fastback
+    g.fillStyle = "rgba(30, 48, 88, 0.92)";
+    g.beginPath();
+    g.moveTo(-w * 0.11, -h * 0.38);
+    g.lineTo(w * 0.11, -h * 0.38);
+    g.lineTo(w * 0.2, h * 0.02);
+    g.lineTo(-w * 0.2, h * 0.02);
+    g.closePath();
+    g.fill();
+
+    // side strake suggestion on haunches
+    g.strokeStyle = "rgba(255,255,255,0.25)";
+    g.lineWidth = Math.max(1, w * 0.012);
+    g.beginPath();
+    g.moveTo(-w * 0.36, h * 0.0);
+    g.lineTo(-w * 0.44, h * 0.12);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(w * 0.36, h * 0.0);
+    g.lineTo(w * 0.44, h * 0.12);
+    g.stroke();
+
+    // mirrors — chrome-ish
+    g.fillStyle = "#b8b8c0";
+    g.beginPath();
+    g.ellipse(-w * 0.2, -h * 0.24, w * 0.045, h * 0.032, -0.2, 0, Math.PI * 2);
+    g.fill();
+    g.beginPath();
+    g.ellipse(w * 0.2, -h * 0.24, w * 0.045, h * 0.032, 0.2, 0, Math.PI * 2);
+    g.fill();
+
+    // lip spoiler
+    g.fillStyle = L.accent;
+    g.fillRect(-w * 0.28, h * 0.06, w * 0.56, h * 0.03);
+
+    paintStripe(g, w, h, L, -w * 0.04, -h * 0.4, w * 0.08, h * 0.52);
+
+    // refined bumper
+    g.fillStyle = L.accent;
+    g.fillRect(-w * 0.34, h * 0.26, w * 0.68, h * 0.06);
+
+    // dual oval exhaust
+    drawExhaust(g, [-w * 0.12, w * 0.12], h * 0.36, w * 0.038, h * 0.024);
+    drawWheels(g, w, h, -w * 0.5, w * 0.4, h * 0.08, h * 0.28, w * 0.1);
+
+    // wing badge hint (small ellipse)
+    g.fillStyle = "#c8c8d0";
+    g.beginPath();
+    g.ellipse(0, h * 0.1, w * 0.04, h * 0.02, 0, 0, Math.PI * 2);
+    g.fill();
+
+    if (L.id === "neon") {
+      g.strokeStyle = L.accent;
+      g.lineWidth = Math.max(1, w * 0.018);
+      g.strokeRect(-w * 0.16, -h * 0.22, w * 0.32, h * 0.16);
+    }
   }
 
   // ─── Entities ──────────────────────────────────────────────
@@ -424,7 +962,7 @@
         finishTime: 0,
         carId: car.id,
         liveryId: liv.id,
-        name: car.name.split(" ")[0].toUpperCase(),
+        name: car.short || car.name.split(" ")[0].toUpperCase(),
         aiPhase: Math.random() * Math.PI * 2,
         spin: 0,
       });
@@ -545,7 +1083,7 @@
       .map((f, i) => {
         const car = getCar(f.carId);
         const liv = getLivery(f.liveryId);
-        return `<div class="rb-row${f.you ? " you" : ""}"><span class="rb-pos">${i + 1}</span><span>${f.name}${f.you ? "" : " · " + car.name.split(" ")[0]}</span><span>${formatTime(f.time)}</span></div>`;
+        return `<div class="rb-row${f.you ? " you" : ""}"><span class="rb-pos">${i + 1}</span><span>${f.name}${f.you ? "" : " · " + (car.short || car.name.split(" ")[0])}</span><span>${formatTime(f.time)}</span></div>`;
       })
       .join("");
     show(resultsScreen);

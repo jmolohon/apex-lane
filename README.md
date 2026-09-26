@@ -36,7 +36,7 @@ Touch pads sit on the **sides** so the road center stays clear.
 ## Features
 
 - Pseudo-3D vanishing-point road (curves, rumble strips, lane markers)
-- 6 modern supercars (wedge family, slight shape variants)
+- 6 iconic supercar silhouettes (911 RS, Esprit S, Tridente GT, Rosso Berlinetta, Counta X, Vantage S) drawn from behind
 - 7 liveries: Rosso Corsa, Giallo, Blu Elettrico, Night Neon, Carbon Stealth, Racing Stripe, Sponsor Pack
 - AI rivals use other cars/liveries from the same stable
 - HUD: speed, lap, position, time, nitro
